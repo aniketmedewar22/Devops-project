@@ -73,21 +73,11 @@ pipeline {
         }
 
         stage("Deploy") {
-
-            steps {
-
-                bat """
-
-                kubectl apply -k k8s
-
-                kubectl rollout restart deployment/backend -n student-app
-
-                kubectl rollout restart deployment/frontend -n student-app
-
-                """
-
-            }
+        steps {
+            bat 'kubectl apply -f k8s\\ --kubeconfig="C:\\Users\\Lenovo\\.kube\\config"'
+            bat 'kubectl rollout restart deployment backend frontend -n student-app --kubeconfig="C:\\Users\\Lenovo\\.kube\\config"'
         }
+    }
 
         stage("Verify") {
 
