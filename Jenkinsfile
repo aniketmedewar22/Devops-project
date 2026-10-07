@@ -4,7 +4,7 @@ pipeline {
 
     environment {
 
-        DOCKER_USER = "YOUR_DOCKERHUB_USERNAME"
+        DOCKER_USER = "aniketmedewar22"
 
         BACKEND_IMAGE = "${DOCKER_USER}/student-task-backend"
 
