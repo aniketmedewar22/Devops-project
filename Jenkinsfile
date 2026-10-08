@@ -72,12 +72,15 @@ pipeline {
             }
         }
 
-        stage("Deploy") {
-        steps {
-            bat 'kubectl apply -f k8s\\ --kubeconfig="C:\\Users\\Lenovo\\.kube\\config"'
-            bat 'kubectl rollout restart deployment backend frontend -n student-app --kubeconfig="C:\\Users\\Lenovo\\.kube\\config"'
+        stage('Deploy / Check Status') {
+    steps {
+        withEnv(["KUBECONFIG=C:\\Users\\Lenovo\\.kube\\config"]) {
+            bat 'kubectl rollout status deployment/backend -n student-app'
+            bat 'kubectl rollout status deployment/frontend -n student-app'
+            bat 'kubectl get pods -n student-app'
         }
     }
+}
 
         stage("Verify") {
 
