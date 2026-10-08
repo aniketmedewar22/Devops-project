@@ -28,8 +28,8 @@ pipeline {
             steps {
 
                 bat """
-                docker build -t %BACKEND_IMAGE%:latest backend
-                """
+                docker build --no-cache -t %BACKEND_IMAGE%:latest backend
+            """
 
             }
         }
