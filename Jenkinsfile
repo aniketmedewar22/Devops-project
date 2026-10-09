@@ -1,5 +1,4 @@
 pipeline {
-
     agent any
 
     environment {
@@ -9,7 +8,6 @@ pipeline {
     }
 
     stages {
-
         stage("Checkout") {
             steps {
                 checkout scm
@@ -18,17 +16,17 @@ pipeline {
 
         stage("Build Backend") {
             steps {
-                sh '''
-                    docker build -t ${BACKEND_IMAGE}:latest ./backend
-                '''
+                bat """
+                    docker build -t %BACKEND_IMAGE%:latest ./backend
+                """
             }
         }
 
         stage("Build Frontend") {
             steps {
-                sh '''
-                    docker build -t ${FRONTEND_IMAGE}:latest ./frontend
-                '''
+                bat """
+                    docker build -t %FRONTEND_IMAGE%:latest ./frontend
+                """
             }
         }
 
@@ -41,36 +39,33 @@ pipeline {
                         passwordVariable: "DOCKER_PASSWORD"
                     )
                 ]) {
-                    sh '''
-                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
-                        docker push ${BACKEND_IMAGE}:latest
-                        docker push ${FRONTEND_IMAGE}:latest
-                    '''
+                    bat """
+                        docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
+                        docker push %BACKEND_IMAGE%:latest
+                        docker push %FRONTEND_IMAGE%:latest
+                    """
                 }
             }
         }
 
         stage("Deploy to Kubernetes") {
             steps {
-                sh '''
+                bat """
                     kubectl apply -k k8s
-
                     kubectl rollout restart deployment/backend -n student-app
                     kubectl rollout restart deployment/frontend -n student-app
-                '''
+                """
             }
         }
 
         stage("Verify Deployment") {
             steps {
-                sh '''
+                bat """
                     kubectl rollout status deployment/backend -n student-app
                     kubectl rollout status deployment/frontend -n student-app
-
                     kubectl get pods -n student-app
                     kubectl get svc -n student-app
-                '''
+                """
             }
         }
     }
@@ -85,9 +80,9 @@ pipeline {
         }
 
         always {
-            sh '''
-                docker logout || true
-            '''
+            bat """
+                docker logout || exit /b 0
+            """
         }
     }
 }
