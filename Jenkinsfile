@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         DOCKER_USER = "aniketmedewar22"
-        BACKEND_IMAGE = "${DOCKER_USER}/student-task-backend"
-        FRONTEND_IMAGE = "${DOCKER_USER}/student-task-frontend"
+        BACKEND_IMAGE = "aniketmedewar22/student-task-backend"
+        FRONTEND_IMAGE = "aniketmedewar22/student-task-frontend"
     }
 
     stages {
@@ -14,75 +14,59 @@ pipeline {
             }
         }
 
+        stage("Docker Login") {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: "docker-hub-cred",
+                        usernameVariable: "DOCKER_USERNAME",
+                        passwordVariable: "DOCKER_PASSWORD"
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    '''
+                }
+            }
+        }
+
         stage("Build Backend") {
             steps {
-                bat """
-                    docker build -t %BACKEND_IMAGE%:latest ./backend
-                """
+                sh '''
+                    docker build -t ${BACKEND_IMAGE}:latest ./backend
+                '''
             }
         }
 
         stage("Build Frontend") {
             steps {
-                bat """
-                    docker build -t %FRONTEND_IMAGE%:latest ./frontend
-                """
+                sh '''
+                    docker build -t ${FRONTEND_IMAGE}:latest ./frontend
+                '''
             }
         }
 
-        stage("Docker Login & Push") {
+        stage("Push Images") {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: "dockerhub",
-                        usernameVariable: "DOCKER_USERNAME",
-                        passwordVariable: "DOCKER_PASSWORD"
-                    )
-                ]) {
-                    bat """
-                        docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
-                        docker push %BACKEND_IMAGE%:latest
-                        docker push %FRONTEND_IMAGE%:latest
-                    """
-                }
-            }
-        }
-
-        stage("Deploy to Kubernetes") {
-            steps {
-                bat """
-                    kubectl apply -k k8s
-                    kubectl rollout restart deployment/backend -n student-app
-                    kubectl rollout restart deployment/frontend -n student-app
-                """
-            }
-        }
-
-        stage("Verify Deployment") {
-            steps {
-                bat """
-                    kubectl rollout status deployment/backend -n student-app
-                    kubectl rollout status deployment/frontend -n student-app
-                    kubectl get pods -n student-app
-                    kubectl get svc -n student-app
-                """
+                sh '''
+                    docker push ${BACKEND_IMAGE}:latest
+                    docker push ${FRONTEND_IMAGE}:latest
+                '''
             }
         }
     }
 
     post {
         success {
-            echo "Deployment successful!"
+            echo "Docker images built and pushed successfully!"
         }
-
         failure {
-            echo "Deployment failed!"
+            echo "Pipeline failed!"
         }
-
         always {
-            bat """
-                docker logout || exit /b 0
-            """
+            sh '''
+                docker logout || true
+            '''
         }
     }
 }
